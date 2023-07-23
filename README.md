@@ -211,7 +211,7 @@ ansible-playbook example.yml --extra-vars "foo=bar"
 ```
 **Special variables**
 
-В Ansible есть встроенные переменные. Их имена нельзя переназначать, но использование встроенных переменных может быть очень полезно
+В Ansible есть встроенные переменные (https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html). Их имена нельзя переназначать, но использование встроенных переменных может быть очень полезно
 ```
 ansible_play_hosts_all — вернёт список хостов из inventory файла
 ```
