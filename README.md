@@ -67,6 +67,57 @@ ansible-playbook myscript.yaml --syntax-check
         name: sshd
         state: restarted
 ...
+```yml
+---
+- name: "Install packages"
+  host: webservers
+  become: true
+  gather_facts: false
+  tags:
+  - init # - можем обращаться только к этому этапу по тэгу = ansible-playbook ansible.yml -v -t init (запуститься только Install packages, без Install nginx)
+  tasks:
+
+  - name:  "Ensure that required packages are installed"
+    yum:
+      name:
+        - vim
+        - mc
+        - epel-release
+        - ca-certificates
+      state: present
+
+  - name: "Install nginx"
+    host: nginx
+    become: true
+    #gather_facts: false
+    tags:
+    - nginx
+    task:
+
+    - name: "Install nginx"
+      yum:
+        name:
+          - nginx
+        state: present
+    - name: "Restart nginx"
+      services:
+        name: nginx
+        state: restarted
+        enabled: yes
+    - name: "Wait for port 80 to become open on the host, don't start checking for 10 seconds"
+      wait_for:
+        port: 80
+        delay: 10
+    - name: "Show current ip"
+      debug:
+        msg: "http://{{ ansible_facts.all_ip4_adresses[0] }}:80"
+```
+```
+ansible <ip or name> -m setup - выдаст всю информацию о хосте в формате json - это так же называется facts - факты, стартуют при запуске прейбука и их можно отключить
+```
+```
+ansible-playbook -i ./hosts playbook.yml --syntax-check - проверка синтеса playbook файлы
+```
 ```
 При создании ВМ с помощью Vagrant может понадобится производить донастройку ВМ. Vagrant позволяет делать это с помощью provision. Можно использовать shell или ansible
 ```
@@ -119,6 +170,21 @@ end
       var1: one
       var2: two
 ```
+Практика
+```
+ansible-galaxy init nginx - создает структуру из папок для nginx
+```
+В папку task -  main.yml переносим все из tasks: и запускаем уже роли
+```yml
+- name: "Install nginx"
+    host: nginx
+    become: true
+    tags:
+    - nginx
+    gather_facts: true
+    roles:
+    - nginx # - запускаем роль созжанную ренее
+```
 **Ansible-galaxy** — это сайт (https://galaxy.ansible.com/home), который является публичным репозиторием для ansible-ролей, написанных сообществом. Т. е. на нём можно искать, использовать и выкладывать роли
 ```
 ansible-galaxy role list
@@ -127,17 +193,14 @@ ansible-galaxy role search nginx
 ansible-galaxy role install nginx
 ansible-galaxy role remove nginx
 ```
-**Tags**
-
-Теги служат, чтобы помечать определённые задачи (task) внутри плейбука или роли и вызывать либо наоборот пропускать только их, не заставляя выполняться весь плейбук
+**Tags** - Теги служат, чтобы помечать определённые задачи (task) внутри плейбука или роли и вызывать либо наоборот пропускать только их, не заставляя выполняться весь плейбук
 ```
 ansible-playbook -i hosts.ini --tags prod playbook.yml
 ansible-playbook -i hosts.ini --skip-tags prod playbook.yml
 ```
-**Handlers** — это специальные задачи. Они вызываются из других
-задач ключевым словом notify. Служат для сокращения кода
-```
----yml
+**Handlers** — это специальные задачи. Они вызываются из других задач ключевым словом notify. Служат для сокращения кода
+```yml
+---
 - name: handlers example
   hosts: all
   become: yes
@@ -155,6 +218,7 @@ ansible-playbook -i hosts.ini --skip-tags prod playbook.yml
       name: sshd
       state: restarted
 ```
+
 **Условие when** - За счёт конструкции when можно выполнять задачу из плейбука только при выполнении какого-либо условия
 ```yml
 tasks:
