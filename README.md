@@ -144,13 +144,13 @@ end
 
 **Структура ролей**
 - defaults — содержит переменные по умолчанию для роли, которые должны быть легко перезаписаны
-- vars — содержит стандартные переменные для роли, которые не должны быть перезаписаны в вашей книге
+- vars — содержит стандартные переменные для роли, которые не должны быть перезаписаны
 - tasks — содержит набор задач, которые должна выполнять роль
 - handlers — содержит набор обработчиков, которые будут использоваться в роли
-- templates — содержит шаблоны Jinja2, которые будут использоваться в роли
-- files — содержит статические файлы, необходимые из ролевых задач
-- tests — может содержать дополнительный файл инвентаря, а также playbook test.yml, который можно использовать для тестирования роли
-- meta — содержит метаданные роли — информацию об авторе, лицензию, зависимости и т. д.
+- templates — содержит шаблоны Jinja2 (язык шаблонов), которые будут использоваться в роли
+- files — содержит статические файлы, необходимые из ролевых задач (позволяет скопировать файл на удаленный хост)
+- tests — может содержать дополнительный inventory файл, а также playbook test.yml, который можно использовать для тестирования роли
+- meta — содержит метаданные роли — информацию об авторе, лицензию, зависимости и т.д.
 
 Расположение файлов роли на файловой системе имеет значение:
 - ./roles — самый высокий приоритет
@@ -184,7 +184,7 @@ ansible-galaxy init nginx - создает структуру из папок д
     - nginx
     gather_facts: true
     roles:
-    - nginx # - запускаем роль созжанную ренее
+    - nginx # - запускаем роль созданную ренее
 ```
 **Ansible-galaxy** — это сайт (https://galaxy.ansible.com/home), который является публичным репозиторием для ansible-ролей, написанных сообществом. Т. е. на нём можно искать, использовать и выкладывать роли
 ```
@@ -213,7 +213,8 @@ ansible-playbook -i hosts.ini --skip-tags prod playbook.yml
       line: PasswordAuthentication yes
     notify:
       - Restart sshd
-  handlers:
+
+  handlers: # handlers - main.yml
   - name: Restart sshd
     service:
       name: sshd
@@ -229,6 +230,7 @@ tasks:
       state: true
       persistent: yes
     when: ansible_selinux.status == "enabled"
+    # when: ansible_facts['os_family'] == "RedHat"
 ```
 **Jinja2** - С помощью механизма шаблонов Jinja2 можно динамически создавать, например, конфигурационные файлы. Для работы с шаблонами Jinja2 используется модуль template. Пример использования:
 ```yml
@@ -239,6 +241,16 @@ A message from {{ inventory_hostname }}
   template:
     src: index.j2
     dest: /var/www/html/index.html
+```
+Пример task Практика
+```
+- name: "Add index page"
+  template:
+    src: "index.html.j2"
+    dest: "/usr/share/nginx/html/index.html"
+    owner: root
+    group: root
+    mode: 0755
 ```
 Пример task с использованием тегов:
 ```
@@ -254,7 +266,15 @@ A message from {{ inventory_hostname }}
 
 Переменная задаётся в процессе запуска плейбука из командной строки:
 ```
-ansible-playbook example.yml --extra-vars "foo=bar"
+ansible-playbook example.yml --extra-vars "foo=bar" - extra vars (наприме, -e "user=my_user") - наивысший приоритет
+```
+Через роли - defaults - main.yml - приоритет ниже
+```
+port: 80 # Практика
+```
+Через роли - vars - main.yml - приоритет выше - больше для служебных переменных
+```
+port: 80 # Практика
 ```
 Переменная задаётся в начале плейбука:
 ```
@@ -286,8 +306,9 @@ ansible_play_hosts_all — вернёт список хостов из inventory
 ```
 ansible-vault create file2.yml
 ansible-vault decrypt file2.yml
-ansible-vault encrypt file2.yml
+ansible-vault encrypt file2.yml - потом вводим пароль
 ansible-vault rekey file2.yml
+--ask-vault-pass - ключ при запуске плейбука, спрашивает пароль для расшифровки зашифрованных файлов
 ```
 **Ansible Tower** — графический веб-интерфейс для управления и мониторинга работы Ansible. Позволяет:
 - пользователям работать со скриптами без необходимости настраивать окружение и разбираться с ними
