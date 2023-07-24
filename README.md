@@ -49,8 +49,8 @@ ansible-playbook myscript.yaml --syntax-check
 - С их помощью удобно управлять запусками и сокращать код
 
 В примере плейбук состоит из двух разделов, для каждого отдельно выбираются целевые хосты и запускаются роли или задачи:
-```
----yml
+```yml
+---
 - name: Playbook 1 name
   hosts: group1
   roles:
@@ -67,6 +67,7 @@ ansible-playbook myscript.yaml --syntax-check
         name: sshd
         state: restarted
 ...
+```
 ```yml
 ---
 - name: "Install packages"
