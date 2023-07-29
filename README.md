@@ -119,7 +119,7 @@ ansible <ip or name> -m setup - выдаст всю информацию о хо
 ```
 ansible-playbook -i ./hosts playbook.yml --syntax-check - проверка синтеса playbook файлы
 ```
-```
+
 При создании ВМ с помощью Vagrant может понадобится производить донастройку ВМ. Vagrant позволяет делать это с помощью provision. Можно использовать shell или ansible
 ```
 Vagrant.configure("2") do |config|
